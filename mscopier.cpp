@@ -1,13 +1,17 @@
-#include <filesystem>
+
 #include <iostream>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string>
+#include <fstream>
+#include <sys/stat.h>
+#include <stdexcept>
 
-using std::filesystem::path;
+
 
 void *CopyFile() {
-  path destinationFolder = "destination_dir";
+ 
   pthread_exit(NULL);
 }
 
@@ -30,8 +34,16 @@ int main(int argc, char *argv[]) {
       std::cerr << "n must be between 2 and 10." << std::endl;
       return 1;
     }
-  } catch (...) {
+  } catch (const std::exception& e) {
     std::cerr << "n must be an integer between 2 and 10." << std::endl;
+    return 1;
+  }
+  struct stat sourcesb, destinationsb;
+  if (stat(source.c_str(), &sourcesb) != 0 || !S_ISDIR(sourcesb.st_mode)) {
+    std::cerr << "The source directory is not valid!" << std::endl;
+    return 1;
+  } else if (stat(destination.c_str(), &destinationsb) != 0 || !S_ISDIR(destinationsb.st_mode)) {
+    std::cerr << "The destination directory is not valid!" << std::endl;
     return 1;
   }
 
@@ -46,4 +58,5 @@ int main(int argc, char *argv[]) {
 
   // Terminate the Calling Thread
   pthread_exit(NULL);
+  return 0;
 }
