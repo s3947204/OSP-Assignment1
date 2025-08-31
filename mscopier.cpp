@@ -2,24 +2,51 @@
 #include <fstream>
 #include <iostream>
 #include <pthread.h>
-#include <stdexcept>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
 #include <sys/stat.h>
 #include <stdexcept>
+#include <dirent.h>
+#include <cctype>
 
 struct Data {
   std::string source;
   std::string destination;
   int id;
+  std::string fileName;
 };
 
 
 
-void *CopyFile() {
+void *CopyFile(void *arg) {
+  Data *data = (Data *) arg;
+
+  std::string sourceFile = data->source + "/" + data->fileName + std::to_string(data->id) + ".txt";
+  std::string destinationFile = data->destination + "/" + data->fileName + std::to_string(data->id) + ".txt";
+  
+  // Open sourceFile for reading
+  std::ifstream Reader(sourceFile.c_str());
+  if (!Reader.is_open()) {
+    std::cerr << "Can't open source file " << sourceFile << std::endl;
+    pthread_exit(NULL);
+  }
+  std::ofstream Writer(destinationFile.c_str());
+  if (!Writer.is_open()) {
+    std::cerr << "Can't open destination file " << destinationFile << std::endl;
+    Reader.close();
+    pthread_exit(NULL);
+}
+  std::string text;
+  while (std::getline(Reader, text)) {
+    Writer << text << std::endl;
+  }
+  
+  Reader.close();
+  Writer.close();
  
   pthread_exit(NULL);
+  return NULL;
 }
 
 int main(int argc, char *argv[]) {
@@ -46,6 +73,7 @@ int main(int argc, char *argv[]) {
     std::cerr << "n must be an integer between 2 and 10." << std::endl;
     return 1;
   }
+
   // Check if source directory and destination directory exist
   struct stat sourcesb, destinationsb;
   if (stat(source.c_str(), &sourcesb) != 0 || !S_ISDIR(sourcesb.st_mode)) {
@@ -56,21 +84,49 @@ int main(int argc, char *argv[]) {
     std::cerr << "The destination directory is not valid!" << std::endl;
     return 1;
   }
+  
+  // Get file name in the source directory, like "source1.txt"
+  DIR* dir = opendir(source.c_str());
+  struct dirent* file;
+ 
+  std::string fullName;
+  while ((file = readdir(dir)) != NULL) {
+    fullName = file->d_name;
+    if (fullName != "." && fullName != "..") {
+      break;
+    }
+  }
+  
+  closedir(dir);
 
-  int threadReturnValue;
+  // Remove .txt at the end
+  std::string fileName = fullName;
+  size_t dot = fileName.rfind(".txt");
+  if (dot != std::string::npos) {
+    fileName = fileName.substr(0, dot);
+  }
+  // Remove digit at the end
+  while (!fileName.empty() && isdigit(fileName.back())) {
+    fileName.pop_back();
+  }
+
+
 
   // Use a struct to store messages
-  Data sharedData;
-  sharedData.source = source;
-  sharedData.destination = destination;
+  Data sharedData[numOfThreads];
+  for (int i = 0; i < numOfThreads; i++) {
+    sharedData[i].source = source;
+    sharedData[i].destination = destination;
+    sharedData[i].id = i + 1;
+    sharedData[i].fileName = fileName;
+  }
+  int threadReturnValue;
 
   // Store the Thread Identifiers
   pthread_t threads[numOfThreads];
 
   for (int k = 0; k < numOfThreads; k++) {
-    // Increment id by 1 to keep track
-    sharedData.id = k + 1;
-    int threadReturnValue = pthread_create(&threads[k], NULL, CopyFile, &sharedData);
+    threadReturnValue = pthread_create(&threads[k], NULL, CopyFile, &sharedData[k]);
     if (threadReturnValue != 0) {
       std::cerr << "Creating thread failed!" << std::endl;
       return 1;
