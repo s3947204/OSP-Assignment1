@@ -1,14 +1,14 @@
-
+#include <cctype>
+#include <dirent.h>
 #include <fstream>
 #include <iostream>
 #include <pthread.h>
+#include <sstream>
+#include <stdexcept>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
 #include <sys/stat.h>
-#include <stdexcept>
-#include <dirent.h>
-#include <cctype>
 
 struct Data {
   std::string source;
@@ -17,14 +17,18 @@ struct Data {
   std::string fileName;
 };
 
-
-
 void *CopyFile(void *arg) {
-  Data *data = (Data *) arg;
+  Data *data = (Data *)arg;
 
-  std::string sourceFile = data->source + "/" + data->fileName + std::to_string(data->id) + ".txt";
-  std::string destinationFile = data->destination + "/" + data->fileName + std::to_string(data->id) + ".txt";
-  
+  std::ostringstream oss;
+  oss << data->id;
+  std::string id_str = oss.str();
+
+  std::string sourceFile =
+      data->source + "/" + data->fileName + id_str + ".txt";
+  std::string destinationFile =
+      data->destination + "/" + data->fileName + id_str + ".txt";
+
   // Open sourceFile for reading
   std::ifstream Reader(sourceFile.c_str());
   if (!Reader.is_open()) {
@@ -36,15 +40,15 @@ void *CopyFile(void *arg) {
     std::cerr << "Can't open destination file " << destinationFile << std::endl;
     Reader.close();
     pthread_exit(NULL);
-}
+  }
   std::string text;
   while (std::getline(Reader, text)) {
     Writer << text << std::endl;
   }
-  
+
   Reader.close();
   Writer.close();
- 
+
   pthread_exit(NULL);
   return NULL;
 }
@@ -61,16 +65,11 @@ int main(int argc, char *argv[]) {
   std::string source = argv[2];
   std::string destination = argv[3];
 
-  int numOfThreads = 0;
-  // Convert n to an integer and check if it's valid
-  try {
-    numOfThreads = std::stoi(num);
-    if (numOfThreads < 2 || numOfThreads > 10) {
-      std::cerr << "n must be between 2 and 10." << std::endl;
-      return 1;
-    }
-  } catch (const std::exception &e) {
-    std::cerr << "n must be an integer between 2 and 10." << std::endl;
+  int numOfThreads;
+
+  numOfThreads = atoi(num.c_str());
+  if (numOfThreads < 2 || numOfThreads > 10) {
+    std::cerr << "n must be between 2 and 10." << std::endl;
     return 1;
   }
 
@@ -84,11 +83,11 @@ int main(int argc, char *argv[]) {
     std::cerr << "The destination directory is not valid!" << std::endl;
     return 1;
   }
-  
+
   // Get file name in the source directory, like "source1.txt"
-  DIR* dir = opendir(source.c_str());
-  struct dirent* file;
- 
+  DIR *dir = opendir(source.c_str());
+  struct dirent *file;
+
   std::string fullName;
   while ((file = readdir(dir)) != NULL) {
     fullName = file->d_name;
@@ -96,7 +95,7 @@ int main(int argc, char *argv[]) {
       break;
     }
   }
-  
+
   closedir(dir);
 
   // Remove .txt at the end
@@ -105,12 +104,10 @@ int main(int argc, char *argv[]) {
   if (dot != std::string::npos) {
     fileName = fileName.substr(0, dot);
   }
-  // Remove digit at the end
-  while (!fileName.empty() && isdigit(fileName.back())) {
-    fileName.pop_back();
+
+  while (!fileName.empty() && isdigit(fileName[fileName.length() - 1])) {
+    fileName.erase(fileName.length() - 1);
   }
-
-
 
   // Use a struct to store messages
   Data sharedData[numOfThreads];
@@ -126,7 +123,8 @@ int main(int argc, char *argv[]) {
   pthread_t threads[numOfThreads];
 
   for (int k = 0; k < numOfThreads; k++) {
-    threadReturnValue = pthread_create(&threads[k], NULL, CopyFile, &sharedData[k]);
+    threadReturnValue =
+        pthread_create(&threads[k], NULL, CopyFile, &sharedData[k]);
     if (threadReturnValue != 0) {
       std::cerr << "Creating thread failed!" << std::endl;
       return 1;
