@@ -8,6 +8,12 @@
 #include <sys/stat.h>
 #include <stdexcept>
 
+struct Data {
+  std::string source;
+  std::string destination;
+  int id;
+};
+
 
 
 void *CopyFile() {
@@ -49,14 +55,27 @@ int main(int argc, char *argv[]) {
 
   int threadReturnValue;
 
+  // Use a struct to store messages
+  Data sharedData;
+  sharedData.source = source;
+  sharedData.destination = destination;
+
   // Store the Thread Identifiers
   pthread_t threads[numOfThreads];
 
   for (int k = 0; k < numOfThreads; k++) {
-    threadReturnValue = pthread_create(&threads[k], NULL, CopyFile, (void *)t);
+    // Increment id by 1 to keep track
+    sharedData.id = k + 1;
+    int threadReturnValue = pthread_create(&threads[k], NULL, CopyFile, &sharedData);
+    if (threadReturnValue != 0) {
+      std::cerr << "Creating thread failed!" << std::endl;
+      return 1;
+    }
   }
 
   // Terminate the Calling Thread
-  pthread_exit(NULL);
+  for (int i = 0; i < numOfThreads; i++) {
+    pthread_join(threads[i], NULL);
+  }
   return 0;
 }
