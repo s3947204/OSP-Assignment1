@@ -9,9 +9,11 @@
 #include <string>
 #include <vector>
 
+// may become redundant once sync is implemented
 bool doneReading = false;
 // constraint on lines
 const int MAX_QUEUE_SIZE = 20;
+// might need mutex for thuis
 std::queue<std::string> sharedQueue;
 
 struct Data {
@@ -21,6 +23,10 @@ struct Data {
     std::string fileName; 
 };
 
+/*
+ * needs mutex for these 2 (corrupted reads and overlapping writes)
+ * CV for waiting (writers if q is empty | readers if q is full)
+*/ 
 std::ifstream inputFile;
 std::ofstream outputFile;
 
@@ -75,7 +81,7 @@ int main(int argc, char *argv[]) {
     int numThreads = atoi(numStr.c_str());
     if (numThreads < 2 || numThreads > 10) {
         std::cerr << "Error: num_threads must be between 2 and 10.\n";
-        // uncomment once sync is implemented************************************
+        // uncomment once sync is implemented | currently doesnt work for 2+ threads
         //return 1;
     }
 
