@@ -75,6 +75,7 @@ int main(int argc, char *argv[]) {
     int numThreads = atoi(numStr.c_str());
     if (numThreads < 2 || numThreads > 10) {
         std::cerr << "Error: num_threads must be between 2 and 10.\n";
+        // uncomment once sync is implemented************************************
         //return 1;
     }
 
@@ -142,6 +143,7 @@ int main(int argc, char *argv[]) {
     inputFile.close();
     outputFile.close();
 
+    // progress tracker | delete when finished
     std::cout << "Copying finished. Note that locks and CVs not yet implemented\n";
     return 0;
 }
