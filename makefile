@@ -2,8 +2,8 @@
 CXX = g++
 #gcc -Wall -Werror -o mscopier mscopier.c -lpthread
 CXXFLAGS = -Wall -Werror
-TARGET = mscopier
-SRC = mscopier.cpp
+TARGET = mmcopier
+SRC = mmcopier.cpp
 
 # object file
 OBJ = $(SRC:.cpp=.o)
