@@ -30,11 +30,18 @@ struct Data {
 std::ifstream inputFile;
 std::ofstream outputFile;
 
+pthread_mutex_t mutex;
+
+// Does Producer Consumer Problem
 void *readerThread(void *arg) {
+    // Acquire the Mutex Lock
+    pthread_mutex_lock(&mutex); 
+
     Data *data = (Data *)arg;
     if (!data) pthread_exit((void*)1);
 
     std::string line;
+    // Busy Waiting
     while (true) {
         if (!std::getline(inputFile, line)) {
             doneReading = true;
@@ -44,14 +51,23 @@ void *readerThread(void *arg) {
             sharedQueue.push(line);
         }
     }
+
+    // Release the Mutex Lock when done
+    pthread_mutex_unlock(&mutex);
+
     pthread_exit(NULL);
+
     return NULL;
 }
 
 void *writerThread(void *arg) {
+    // Acquire the Mutex Lock
+    pthread_mutex_lock(&mutex); 
+
     Data *data = (Data *)arg;
     if (!data) pthread_exit((void*)1);
 
+    //Busy Waiting
     while (true) {
         if (!sharedQueue.empty()) {
             std::string line = sharedQueue.front();
@@ -61,7 +77,12 @@ void *writerThread(void *arg) {
             break;
         }
     }
+
+    // Release the Mutex Lock when done
+    pthread_mutex_unlock(&mutex);
+
     pthread_exit(NULL);
+
     return NULL;
 }
 
@@ -77,6 +98,9 @@ int main(int argc, char *argv[]) {
     std::string numStr = argv[1];
     std::string sourceFile = argv[2];
     std::string destFile   = argv[3];
+
+    // Initialize the Mutex Lock
+    pthread_mutex_init(&mutex, NULL);
 
     int numThreads = atoi(numStr.c_str());
     if (numThreads < 2 || numThreads > 10) {
@@ -150,6 +174,6 @@ int main(int argc, char *argv[]) {
     outputFile.close();
 
     // progress tracker | delete when finished
-    std::cout << "Copying finished. Note that locks and CVs not yet implemented\n";
+    std::cout << "Copying finished. Note that CVs and Memory Leaks Fixation not yet implemented\n";
     return 0;
 }
