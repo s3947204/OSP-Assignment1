@@ -31,29 +31,40 @@ std::ifstream inputFile;
 std::ofstream outputFile;
 
 pthread_mutex_t mutex;
+pthread_cond_t notFull;
+pthread_cond_t notEmpty;
 
 // Does Producer Consumer Problem
 void *readerThread(void *arg) {
-    // Acquire the Mutex Lock
-    pthread_mutex_lock(&mutex); 
 
     Data *data = (Data *)arg;
     if (!data) pthread_exit((void*)1);
 
     std::string line;
-    // Busy Waiting
+
     while (true) {
+        // Acquire the Mutex Lock
+        pthread_mutex_lock(&mutex); 
+
+        // Puts Reader to sleep if SharedQueue is Full and waits for the notFull Signal
+        while (!sharedQueue.empty() && !doneReading) {
+            pthread_cond_wait(&notFull, &mutex);
+        }
+
         if (!std::getline(inputFile, line)) {
             doneReading = true;
+            
+            // Release the Mutex Lock when done
+            pthread_mutex_unlock(&mutex);
             break;
         }
         if ((int)sharedQueue.size() < MAX_QUEUE_SIZE) {
             sharedQueue.push(line);
+
+            // Signal to Consumer that data is able to be consumed
+            pthread_cond_signal(&notEmpty, &mutex); 
         }
     }
-
-    // Release the Mutex Lock when done
-    pthread_mutex_unlock(&mutex);
 
     pthread_exit(NULL);
 
@@ -61,25 +72,33 @@ void *readerThread(void *arg) {
 }
 
 void *writerThread(void *arg) {
-    // Acquire the Mutex Lock
-    pthread_mutex_lock(&mutex); 
 
     Data *data = (Data *)arg;
     if (!data) pthread_exit((void*)1);
+    
 
-    //Busy Waiting
     while (true) {
+        // Acquire the Mutex Lock
+        pthread_mutex_lock(&mutex); 
+
+        // Puts Writer to sleep if SharedQueue is Empty and waits for the notFull Signal
+        while (sharedQueue.empty() && !doneReading) {
+            pthread_cond_wait(&notEmpty, &mutex);
+        }
+
         if (!sharedQueue.empty()) {
             std::string line = sharedQueue.front();
             sharedQueue.pop();
+
+            // Signal to Consumer that data is able to be produced
+            pthread_cond_signal(&notFull, &mutex); 
             outputFile << line << "\n";
         } else if (doneReading) {
+            // Release the Mutex Lock when done
+            pthread_mutex_unlock(&mutex);
             break;
         }
     }
-
-    // Release the Mutex Lock when done
-    pthread_mutex_unlock(&mutex);
 
     pthread_exit(NULL);
 
@@ -105,8 +124,7 @@ int main(int argc, char *argv[]) {
     int numThreads = atoi(numStr.c_str());
     if (numThreads < 2 || numThreads > 10) {
         std::cerr << "Error: num_threads must be between 2 and 10.\n";
-        // uncomment once sync is implemented | currently doesnt work for 2+ threads
-        //return 1;
+        return 1;
     }
 
     inputFile.open(sourceFile.c_str());
