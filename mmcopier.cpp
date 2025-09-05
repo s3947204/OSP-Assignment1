@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string>
 #include <sys/stat.h>
+#include <vector>
 
 struct Data {
   std::string source;
@@ -110,7 +111,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Use a struct to store messages
-  Data sharedData[numOfThreads];
+  std::vector<Data> sharedData(numOfThreads);
   for (int i = 0; i < numOfThreads; i++) {
     sharedData[i].source = source;
     sharedData[i].destination = destination;
@@ -120,7 +121,7 @@ int main(int argc, char *argv[]) {
   int threadReturnValue;
 
   // Store the Thread Identifiers
-  pthread_t threads[numOfThreads];
+  std::vector<pthread_t> threads(numOfThreads);
 
   for (int k = 0; k < numOfThreads; k++) {
     threadReturnValue =
