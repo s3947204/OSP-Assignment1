@@ -1,6 +1,6 @@
 
-CXX = g++
-#gcc -Wall -Werror -o mscopier mscopier.c -lpthread
+CXX = gcc
+#gcc -Wall -Werror -o mscopier mscopier.cpp -lpthread -lstdc++
 CXXFLAGS = -Wall -Werror
 TARGETS = mmcopier mscopier
 SRC_MM = mmcopier.cpp
@@ -13,10 +13,10 @@ OBJ_MS = $(SRC_MS:.cpp=.o)
 all: $(TARGETS)
 
 mmcopier: $(OBJ_MM)
-	$(CXX) $(CXXFLAGS) -o $@ $^ -lpthread
+	$(CXX) $(CXXFLAGS) -o $@ $^ -lpthread -lstdc++
 
 mscopier: $(OBJ_MS)
-	$(CXX) $(CXXFLAGS) -o $@ $^ -lpthread
+	$(CXX) $(CXXFLAGS) -o $@ $^ -lpthread -lstdc++
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
