@@ -1,5 +1,5 @@
 #!/bin/bash
-make clean
+make -s clean
 make -s mmcopier
 
 # Create dest dir if it does not already exist
