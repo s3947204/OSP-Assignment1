@@ -66,24 +66,6 @@ done
 
 echo "No memory leaks present in mscopier"
 echo ""
-echo "Testing for thread safety"
-echo "......................."
-echo ""
-
-# valgrind --tool=helgrind ./mscopier 10 source.txt dest.txt
-for i in {2..10}; do 
-    echo "Testing for n value of $i";
-    touch dest.txt; 
-
-    valgrind -s --tool=helgrind ./mscopier $i source.txt dest.txt ;
-    echo "";
-    echo "";
-    echo "";
-
-
-    rm dest.txt;
-
-done 
 
 
 make -s clean

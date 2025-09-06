@@ -64,9 +64,6 @@ done
 
 echo "No memory leaks present in mmcopier"
 
-# Todo: add thread safety tests
-# valgrind --tool=helgrind ./mmcopier 10 source_dir/ dest_dir/
-
 make -s clean
 rm -r dest_dir
 
