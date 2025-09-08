@@ -15,11 +15,18 @@ Log into one of the teaching servers (jupiter.csit.rmit.edu.au, saturn.csit.rmit
 ssh sXXXXXXX@jupiter.csit.rmit.edu.au   # or saturn/titan
 ```
 - via windows (on a terminal emulator):
+
+E.g. For Putty
+
+enter:
 ```bash
 sXXXXXXX@jupiter.csit.rmit.edu.au   # or saturn/titan
 ```
 
-Compile using the Makefile:
+in "Hostname" or "IP address" and then login using your associated RMIT password.
+
+
+## Compile using the Makefile:
 
 ```bash
 make            # builds both mmcopier & mscopier
